@@ -1,6 +1,6 @@
 package com.taotao.controller;
 
-import com.taotao.common.pojo.EasyUIResult;
+import com.taotao.common.pojo.EasyUIDataGridResult;
 import com.taotao.common.pojo.TaotaoResult;
 import com.taotao.pojo.TbItem;
 import com.taotao.service.ItemService;
@@ -19,7 +19,7 @@ public class ItemController {
     @Autowired
     private ItemService itemService;
 
-
+//查询
     @RequestMapping("/item/{itemId}")
 
     @ResponseBody
@@ -28,13 +28,14 @@ public class ItemController {
 
         return item;
     }
-
+    //分页
     @RequestMapping("/item/list")
     @ResponseBody
-    public EasyUIResult getItemList(Integer page, Integer rows) {
-        EasyUIResult result = itemService.getItemList(page, rows);
-        return  result;
+    public EasyUIDataGridResult getItemList(Integer page, Integer rows){
+        EasyUIDataGridResult result = itemService.getItemList(page, rows);
+        return result;
     }
+    //删除
     @RequestMapping("/rest/item/delete")
     @ResponseBody
     public TaotaoResult deleteItem(Integer[] ids){
@@ -44,5 +45,49 @@ public class ItemController {
     @RequestMapping("/rest/page/item-edit/{ids}")
     public void showUpdate(@PathVariable Integer ids){
         System.out.println(ids);
+    }
+    //修改
+    @RequestMapping("/item/save")
+    @ResponseBody
+    public TaotaoResult addItems(TbItem tbItem, String desc){
+        TaotaoResult result = itemService.addItems(tbItem, desc);
+        return result;
+    }
+    //上架
+    @RequestMapping("/rest/item/reshelf")
+    @ResponseBody
+    public TaotaoResult updataup(Integer []ids){
+        TaotaoResult updateup = itemService.updateup(ids);
+        return updateup;
+    }
+    //下架
+    @RequestMapping("/rest/item/instock")
+    @ResponseBody
+    public TaotaoResult updatadown(Integer []ids){
+        TaotaoResult updateDown = itemService.updateDown(ids);
+        return updateDown;
+    }
+    //修改
+   /* @RequestMapping("/rest/item/update")
+    @ResponseBody
+    public TaotaoResult updateItemList(TbItem tbItem,String desc){
+        TaotaoResult result=itemService.updateItems(tbItem,desc);
+        return result;
+    }*/
+    @RequestMapping("/item/query/item/desc/{id}")
+    @ResponseBody
+    public TaotaoResult findItemDescByItemId(@PathVariable Long id){
+        TaotaoResult taotaoResult = itemService.queryItemDescByItemId(id);
+        //System.out.println(taotaoResult);
+        return taotaoResult;
+    }
+
+    @RequestMapping("/rest/item/update")
+    @ResponseBody
+    public TaotaoResult updateItem(TbItem tbItem,String desc){
+
+        TaotaoResult taotaoResult = itemService.updateItemAndItemDesc(tbItem, desc);
+        System.out.println(taotaoResult.getStatus()+","+taotaoResult.getMsg());
+        return taotaoResult;
     }
 }

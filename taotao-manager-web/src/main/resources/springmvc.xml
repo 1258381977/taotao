@@ -54,4 +54,11 @@
     <dubbo:reference interface="com.taotao.service.ItemCatService" id="itemCatService"/>
     <!--引入商品图片服务-->
     <dubbo:reference interface="com.taotao.service.PictureService" id="pictureService"/>
+
+    <!--引入内容分类服务-->
+    <dubbo:reference interface="com.taotao.content.service.ContentCategoryService" id="contentCategoryService"/>
+    <!--引入内容分类服务-->
+    <dubbo:reference interface="com.taotao.content.service.ContentService" id="contentService"/>
+    <!--引入搜索服务-->
+    <dubbo:reference interface="com.taotao.search.service.SearchItemService" id="searchItemService" timeout="60000"/>
 </beans>
