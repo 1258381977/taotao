@@ -3,22 +3,19 @@ package com.taotao.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.taotao.common.pojo.EasyUIDataGridResult;
-import com.taotao.common.pojo.SearchItem;
 import com.taotao.common.pojo.TaotaoResult;
 import com.taotao.common.utils.IDUtils;
-import com.taotao.mapper.SearchItemMapper;
 import com.taotao.mapper.TbItemDescMapper;
 import com.taotao.mapper.TbItemMapper;
 import com.taotao.pojo.TbItem;
 import com.taotao.pojo.TbItemDesc;
 import com.taotao.service.ItemService;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.common.SolrInputDocument;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
+import javax.jms.*;
 import java.util.Date;
 import java.util.List;
 
@@ -28,10 +25,10 @@ public class ItemServiceImpl implements ItemService {
     private TbItemMapper tbItemMapper;
     @Autowired
     private TbItemDescMapper tbItemDescMapper;
-    @Autowired
-    private SolrServer solrServer;
-    @Autowired
-    private SearchItemMapper searchItemMapper;
+   @Autowired
+   private JmsTemplate jmsTemplate;
+   @Autowired
+   private Destination topicDestination;
     @Override
     public TbItem getItemById(Long itemId) {
         return tbItemMapper.findItemById(itemId);
@@ -64,7 +61,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public TaotaoResult addItems(TbItem tbItem, String desc) {
-        Long itemId = IDUtils.genItemId();
+        final Long itemId = IDUtils.genItemId();
         tbItem.setId(itemId);
         tbItem.setStatus((byte) 1);
         Date date = new Date();
@@ -81,34 +78,21 @@ public class ItemServiceImpl implements ItemService {
         int itemDescCount = tbItemDescMapper.addItemDesc(itemDesc);
 
         if (itemCount != 0 && itemDescCount != 0) {
-            try {
-                //索引同步
-                SearchItem searchItem = searchItemMapper.getItemById(itemId);
-                SolrInputDocument document=new SolrInputDocument();
-                // 4、为文档添加域
-                document.addField("id", searchItem.getId());
-                document.addField("item_title", searchItem.getTitle());
-                document.addField("item_sell_point", searchItem.getSell_point());
-                document.addField("item_price", searchItem.getPrice());
-                document.addField("item_image", searchItem.getImage());
-                document.addField("item_category_name", searchItem.getCategory_name());
-                document.addField("item_desc", searchItem.getItem_desc());
-                // 5、向索引库中添加文档。
-                solrServer.add(document);
-                solrServer.commit();
-            } catch (SolrServerException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            jmsTemplate.send(topicDestination, new MessageCreator() {
+                @Override
+                public Message createMessage(Session session) throws JMSException {
+                    TextMessage message=session.createTextMessage(itemId+"");
+                    return message;
+                }
+            });
+
             return TaotaoResult.ok();
         }
 
 
-
-
         return TaotaoResult.build(500, "添加商品有误，请重新输入");
     }
+
     @Override
     public TaotaoResult updateup(Integer[] ids) {
         int itemup = tbItemMapper.updateup(ids);
